@@ -1,2 +1,3 @@
 # myThreadPool
-Using the characteristics of cpp17 to improve the existing thread pool project
+
+implementaion of thread pool use cpp
