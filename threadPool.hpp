@@ -115,9 +115,7 @@ public:
 
         notEmpty_.notify_all();
 
-        if(mode_ == PoolMode::CACHED_MODE
-            && taskSize_ > idleThreadSize_
-            && curThreadSize_ < threadSizeThreshHold_) {
+        if(mode_ == PoolMode::CACHED_MODE && taskSize_ > idleThreadSize_ && curThreadSize_ < threadSizeThreshHold_) {
             std::cout << ">>>create new thread>>>" << std::endl;
 
             auto ptr = std::make_unique<Thread>(std::bind(&ThreadPool::threadFunc, this, _1));
@@ -131,7 +129,7 @@ public:
         return result;
     }
 
-    void start(int initThreadSize = std::thread::hardware_concurrency()) { // wsl使用主机16线程
+    void start(int initThreadSize = std::thread::hardware_concurrency()) {
         isPoolRunning_ = true;
         initThreadSize_ = initThreadSize;
         idleThreadSize_ = initThreadSize;
@@ -161,8 +159,7 @@ private:
                 while (taskQue_.size() == 0) {
                     if(!isPoolRunning_) {
                         threads_.erase(threadid);
-                        std::cout << "threadId: " << std::this_thread::get_id
-                            << " exit!" << std::endl;
+                        std::cout << "threadId: " << std::this_thread::get_id << " exit!" << std::endl;
                         exitCond_.notify_all();
                         return;
                     }
@@ -171,14 +168,12 @@ private:
                             notEmpty_.wait_for(lock, std::chrono::seconds(1))) {
                             auto now = std::chrono::high_resolution_clock().now();
                             auto dur = std::chrono::duration_cast<std::chrono::seconds>(now - lastTime);
-                            if(dur.count() >= THREAD_MAX_IDLE_TIME
-                                && curThreadSize_ > initThreadSize_) {
+                            if(dur.count() >= THREAD_MAX_IDLE_TIME && curThreadSize_ > initThreadSize_) {
                                 threads_.erase(threadid);
                                 curThreadSize_--;
                                 idleThreadSize_--;
 
-                                std::cout << "threadId: " << std::this_thread::get_id()
-                                    << " exit!" << std::endl;
+                                std::cout << "threadId: " << std::this_thread::get_id() << " exit!" << std::endl;
                                 return;
                             }
                         }
@@ -188,8 +183,7 @@ private:
                     }
                 }
                 idleThreadSize_--;
-                std::cout << "tid: " << std::this_thread::get_id()
-                    << "get task successfully!" << std::endl;
+                std::cout << "tid: " << std::this_thread::get_id() << "get task successfully!" << std::endl;
                 task = taskQue_.front();
                 taskQue_.pop();
                 taskSize_--;
