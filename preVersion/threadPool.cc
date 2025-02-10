@@ -16,11 +16,9 @@ ThreadPool::ThreadPool()
 	, taskQueMaxThreshHold_(TASK_MAX_THRESHHOLD)
 	, threadSizeThreshHold_(THREAD_MAX_THRESHHOLD)
 	, mode_(PoolMode::FIXED_MODE)
-	, isPoolRunning_(false)
-{}
+	, isPoolRunning_(false) {}
 
-ThreadPool::~ThreadPool()
-{
+ThreadPool::~ThreadPool() {
 	isPoolRunning_ = false;
 	
 	// 等待线程池里面所有的线程返回  有两种状态：阻塞 & 正在执行任务中
@@ -39,8 +37,7 @@ void ThreadPool::setTaskQueMaxThreshHold(int threshhold) {
 	taskQueMaxThreshHold_ = threshhold;
 }
 
-void ThreadPool::setThreadSizeThreshHold(int threshhold)
-{
+void ThreadPool::setThreadSizeThreshHold(int threshhold) {
 	if (checkRunningState()) return;
 	if (mode_ == PoolMode::CACHED_MODE) {
 		threadSizeThreshHold_ = threshhold;
@@ -117,14 +114,13 @@ void ThreadPool::threadFunc(int threadid) {
 	auto lastTime = std::chrono::high_resolution_clock().now();
 
 	// 所有任务必须执行完成，线程池才可以回收所有线程资源
-	for (;;) {
+	while(true) {
 		std::shared_ptr<Task> task;
 		{
 			// 先获取锁
 			std::unique_lock<std::mutex> lock(taskQueMtx_);
 
-			std::cout << "tid:" << std::this_thread::get_id()
-				<< "尝试获取任务..." << std::endl;
+			std::cout << "tid:" << std::this_thread::get_id() << "trying to get task..." << std::endl;
 
 			while (taskQue_.size() == 0) {
 				// 线程池要结束，回收线程资源
@@ -165,7 +161,7 @@ void ThreadPool::threadFunc(int threadid) {
 			idleThreadSize_--;
 
 			std::cout << "tid:" << std::this_thread::get_id()
-				<< "获取任务成功..." << std::endl;
+				<< "get task successfully..." << std::endl;
 
 			// 从任务队列种取一个任务出来
 			task = taskQue_.front();
@@ -196,22 +192,14 @@ bool ThreadPool::checkRunningState() const {
 	return isPoolRunning_;
 }
 
-////////////////  线程方法实现
 int Thread::generateId_ = 0;
+Thread::Thread(ThreadFunc func) : func_(func), threadId_(generateId_++) {}
 
-// 线程构造
-Thread::Thread(ThreadFunc func)
-	: func_(func)
-	, threadId_(generateId_++)
-{}
-
-// 线程析构
 Thread::~Thread() {}
 
 // 启动线程
 void Thread::start() {
-	// 创建一个线程来执行一个线程函数 pthread_create
-	std::thread t(func_, threadId_);  // C++11来说 线程对象t  和线程函数func_
+	std::thread t(func_, threadId_);
 	t.detach(); // 设置分离线程   pthread_detach  pthread_t设置成分离线程
 }
 
@@ -219,10 +207,7 @@ int Thread::getId() const {
 	return threadId_;
 }
 
-
-/////////////////  Task方法实现
-Task::Task() : result_(nullptr)
-{}
+Task::Task() : result_(nullptr) {}
 
 void Task::exec() {
 	if (result_ != nullptr) {
@@ -234,18 +219,13 @@ void Task::setResult(Result* res) {
 	result_ = res;
 }
 
-/////////////////   Result方法的实现
-Result::Result(std::shared_ptr<Task> task, bool isValid)
-	: isValid_(isValid)
-	, task_(task) {
+Result::Result(std::shared_ptr<Task> task, bool isValid) : isValid_(isValid), task_(task) {
 	task_->setResult(this);
 }
 
 Any Result::get() { // 用户调用的
-	if (!isValid_) {
-		return "";
-	}
-	sem_.wait(); // task任务如果没有执行完，这里会阻塞用户的线程
+	if (!isValid_) return "";
+	sem_.wait(); // task任务如果没有执行完，阻塞用户的线程
 	return std::move(any_);
 }
 
