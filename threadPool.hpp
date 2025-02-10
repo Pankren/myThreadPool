@@ -103,7 +103,7 @@ public:
             return taskQue_.size() < (size_t)taskQueMaxThreshHold_;
         })) {
             std::cerr << "task queue is full, submit task fail!" << std::endl;
-            auto task = std::make_shared<std::packaged_task<rType()>>([]()->bool {
+            auto task = std::make_shared<std::packaged_task<rType()>>([]()->rType {
                 return rType();
             });
             (*task)();
@@ -154,7 +154,7 @@ private:
             {
                 std::unique_lock<std::mutex> lock(taskQueMtx_);
 
-                std::cout << "tid: " << std::this_thread::get_id() << "trying get task..." << std::endl;
+                std::cout << "tid: " << std::this_thread::get_id() << " trying get task..." << std::endl;
 
                 while (taskQue_.size() == 0) {
                     if(!isPoolRunning_) {
