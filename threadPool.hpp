@@ -60,11 +60,7 @@ public:
 
     ~ThreadPool() {
         isPoolRunning_ = false;
-        /*
-        几个问题：
-        1、线程池对象只有一个 为什么析构函数中任然需要保证线程安全unique_lock？
-        2、为什么使用notify_all条件变量来实现线程同步？
-        */
+        
         std::unique_lock<std::mutex> lock(taskQueMtx_);
         notEmpty_.notify_all();
         exitCond_.wait(lock, [&]()->bool {return threads_.size() == 0;});
